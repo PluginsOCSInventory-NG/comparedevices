@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hookstore>
+    <hook type="lang">
+        <value>en_GB</value>
+    </hook>
+    <hook type="submenu">
+        <mainmenuidentifier>ms_extension</mainmenuidentifier>
+        <identifier>ms_compare_xmls</identifier>
+        <translation>23152</translation>
+    </hook>
+</hookstore>

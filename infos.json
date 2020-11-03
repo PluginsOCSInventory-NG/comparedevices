@@ -1,0 +1,13 @@
+{
+    "displayName" : "Compare XMLs",
+    "author" : ["Léa DROGUET"],
+    "contributor" : [],
+    "supportedAgent" : ["Unix"],
+    "version" : "1",
+    "licence" : "GPLv2",
+    "description" : 
+        {
+            "fr" : "Compare des machines entre elles et retourne leurs différences",
+            "en" : "Compares machines with each other and returns their differences"
+        }
+    }
