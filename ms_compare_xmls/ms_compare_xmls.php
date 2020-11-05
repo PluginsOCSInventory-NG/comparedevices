@@ -23,200 +23,91 @@
 if (AJAX) {
     parse_str($protectedPost['ocs']['0'], $params);
     $protectedPost += $params;
+
     ob_start();
 }
-require_once('require/function_computers.php');
-require_once('require/function_admininfo.php');
-//intégration des fonctions liées à la recherche multicritère
-require_once('require/function_search.php');
+
+// printEnTete($l->g(9000));
+// temp header
+echo "<h2> Compare devices : </h2>";
 
 
-//show mac address on the tab
-$show_mac_addr = true;
+$form_name = 'compare_devices';
 $tab_options = $protectedPost;
-$tab_options['form_name'] = "show_all";
-$form_name = $tab_options['form_name'];
-$tab_options['table_name'] = "list_show_all";
-if (isset($protectedGet['filtre']) && !isset($protectedPost['FILTRE'])) {
-    if (substr($protectedGet['filtre'], 0, 9) == "a.fields_") {
-        $values_accountinfo = accountinfo_tab(substr($protectedGet['filtre'], 9));
-        if (is_array($values_accountinfo)) {
-            $protectedPost['FILTRE_VALUE'] = $values_accountinfo[$protectedGet['value']];
-        }
+$table_name = $form_name;
+$tab_options['form_name'] = $form_name;
+$tab_options['table_name'] = $table_name;
+
+
+echo open_form($form_name, '', 'enctype="multipart/form-data"', 'form-horizontal');
+echo '<div class="col col-md-10" >';
+
+if (isset($protectedPost['SUP_PROF']) && $protectedPost['SUP_PROF'] != "") {
+    // TODO : Remove device from table
+    $result_remove = 0;
+    unset($protectedPost['SUP_PROF']);
+    if ($result_remove == true) {
+        msg_success($l->g(572));
+    } else {
+        msg_error($l->g(573));
     }
-    $protectedPost['FILTRE'] = $protectedGet['filtre'];
-    if (!isset($protectedPost['FILTRE_VALUE'])) {
-        $protectedPost['FILTRE_VALUE'] = $protectedGet['value'];
+}
+
+// IF DEVICE IS ADDED
+if (isset($protectedPost['add_device'])) {
+    var_dump($protectedPost['add_device']);
+    /*  if($result == true){
+        msg_success($l->g(572));
+    }else{
+        msg_error($l->g(573));
     }
+    unset($protectedPost['add_device']); */
 }
 
-// text 
-echo "<h2>Choose main device to use for comparison : </h2><br>";
+// req to select from 
+$link=$_SESSION['OCS']["readServer"];
+$result = mysql2_query_secure("SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_'", $link);
+$result = mysqli_fetch_all($result, MYSQLI_ASSOC);
+var_dump($result);
 
-
-//del the selection
-if ($protectedPost['DEL_ALL'] != '') {
-    foreach ($protectedPost as $key => $value) {
-        $checkbox = explode('check', $key);
-        if (isset($checkbox[1])) {
-            deleteDid($checkbox[1]);
-        }
-    }
-    $tab_options['CACHE'] = 'RESET';
+// prepare array to display during selection
+foreach ($result as $key => $value) {
+    $display[$key] = $value['DEVICEID'];
 }
 
-//delete one computer
-if ($protectedPost['SUP_PROF'] != '') {
-    deleteDid($protectedPost['SUP_PROF']);
-    $tab_options['CACHE'] = 'RESET';
-}
 
-if (!isset($protectedPost['tri_' . $table_name]) || $protectedPost['tri_' . $table_name] == "") {
-    $protectedPost['tri_' . $table_name] = "h.lastdate";
-    $protectedPost['sens_' . $table_name] = "DESC";
-}
-echo open_form($form_name, '', '', 'form-horizontal');
-//BEGIN SHOW ACCOUNTINFO
-$accountinfo_value = interprete_accountinfo($list_fields, $tab_options);
-if (array($accountinfo_value['TAB_OPTIONS'])) {
-    $tab_options = $accountinfo_value['TAB_OPTIONS'];
-}
-if (array($accountinfo_value['DEFAULT_VALUE'])) {
-    $default_fields = $accountinfo_value['DEFAULT_VALUE'];
-}
-$list_fields = $accountinfo_value['LIST_FIELDS'];
-//END SHOW ACCOUNTINFO
-$list_fields2 = array($l->g(46) => "h.lastdate",
-    'NAME' => 'h.name',
-    $l->g(949) => "h.ID",
-    $l->g(24) => "h.userid",
-    $l->g(25) => "h.osname",
-    $l->g(568) => "capa",
-    $l->g(569) => "h.processors",
-    $l->g(33) => "h.workgroup",
-    $l->g(275) => "h.osversion",
-    $l->g(286) => "h.oscomments",
-    $l->g(350) => "h.processort",
-    $l->g(351) => "h.processorn",
-    $l->g(50) => "h.swap",
-    $l->g(352) => "h.lastcome",
-    $l->g(353) => "h.quality",
-    $l->g(354) => "h.fidelity",
-    $l->g(53) => "h.description",
-    $l->g(355) => "h.wincompany",
-    $l->g(356) => "h.winowner",
-    $l->g(357) => "h.useragent",
-    $l->g(64) => "e.smanufacturer",
-    $l->g(284) => "e.bmanufacturer",
-    $l->g(36) => "e.ssn",
-    $l->g(65) => "e.smodel",
-    $l->g(209) => "e.bversion",
-    $l->g(34) => "ipaddress",
-    $l->g(557) => "h.userdomain",
-    $l->g(1247) => "h.ARCH",
-    $l->g(210) => "e.bdate",
-    $l->g(61) => "vname");
-if ($show_mac_addr) {
-    $list_fields2[$l->g(95)] = "n.macaddr";
-    $list_fields2[$l->g(208)] = "n.ipmask";
-    $list_fields2[$l->g(207)] = "n.ipgateway";
-    $list_fields2[$l->g(331)] = "n.ipsubnet";
-}
+echo "<div>
+        <div>";
 
-$list_fields = array_merge($list_fields, $list_fields2);
+// select main device and other devices
+formGroup('select', 'main_device', 'Main device to compare :', '', '', '', '', $result, $display, "required");
+echo "<input type='submit' name='add_main_device' id='add_main_device' class='btn btn-success' value='Add'><br><br>";
+// TODO : hide other device if main device not selected yet + remove already selected devices from list
+formGroup('select', 'other_device', 'Other devices to compare :', '', '', '', '', $result, $display, "required");
+echo "<input type='submit' name='add_other_device' id='add_other_device' class='btn btn-success' value='Add'>";
+echo "</div></div></br></br></br></br>";
 
-// Create select field
-$select_fields2 = array($l->g(46) => "h.lastdate",
-    'NAME' => 'h.name',
-    $l->g(949) => "h.ID",
-    $l->g(24) => "h.userid",
-    $l->g(25) => "h.osname",
-    $l->g(568) => "h.memory as capa",
-    $l->g(569) => "h.processors",
-    $l->g(33) => "h.workgroup",
-    $l->g(275) => "h.osversion",
-    $l->g(286) => "h.oscomments",
-    $l->g(350) => "h.processort",
-    $l->g(351) => "h.processorn",
-    $l->g(50) => "h.swap",
-    $l->g(352) => "h.lastcome",
-    $l->g(353) => "h.quality",
-    $l->g(354) => "h.fidelity",
-    $l->g(53) => "h.description",
-    $l->g(355) => "h.wincompany",
-    $l->g(356) => "h.winowner",
-    $l->g(357) => "h.useragent",
-    $l->g(64) => "e.smanufacturer",
-    $l->g(284) => "e.bmanufacturer",
-    $l->g(36) => "e.ssn",
-    $l->g(65) => "e.smodel",
-    $l->g(209) => "e.bversion",
-    $l->g(34) => "GROUP_CONCAT(DISTINCT n.ipaddress SEPARATOR 0x2D) as ipaddress",
-    $l->g(557) => "h.userdomain",
-    $l->g(1247) => "h.ARCH",
-    $l->g(210) => "e.bdate",
-    $l->g(61) => "v.name as vname");
+// Display table of all type created 
+$list_fields = array(
+    'ID' => 'ID',
+    'DEVICE ID' => 'DEVICEID',
+);
 
-// List for select
-$select_fields = array_merge($list_fields, $select_fields2);
+$list_fields['SUP'] = 'ID';
+$tab_options['LBL_POPUP']['SUP'] = 'TYPE_NAME';
 
-$tab_options['FILTRE'] = array_flip($list_fields);
-$tab_options['FILTRE']['h.name'] = $l->g(23);
-asort($tab_options['FILTRE']);
-if ($_SESSION['OCS']['profile']->getConfigValue('DELETE_COMPUTERS') == "YES") {
-    $list_fields['CHECK'] = 'h.ID';
-    $list_fields['SUP'] = 'h.ID';
-}
-$list_col_cant_del = array('SUP' => 'SUP', 'NAME' => 'NAME', 'CHECK' => 'CHECK');
-$default_fields2 = array($_SESSION['OCS']['TAG_LBL']['TAG'] => $_SESSION['OCS']['TAG_LBL'], $l->g(46) => $l->g(46), 'NAME' => 'NAME', $l->g(23) => $l->g(23),
-    $l->g(24) => $l->g(24), $l->g(25) => $l->g(25), $l->g(568) => $l->g(568),
-    $l->g(569) => $l->g(569));
-$default_fields = array_merge($default_fields, $default_fields2);
-$sql = prepare_sql_tab($select_fields, array('SUP', 'CHECK'));
-$tab_options['ARG_SQL'] = $sql['ARG'];
-$queryDetails = $sql['SQL'] . " from hardware h
-				LEFT JOIN accountinfo a ON a.hardware_id=h.id  ";
+$default_fields = $list_fields;
+$list_col_cant_del = $list_fields;
 
-if ($show_mac_addr) {
-    $queryDetails .= "	LEFT JOIN networks n ON n.hardware_id=h.id ";
-}
-// BIOS INFOS
-$queryDetails .= "LEFT JOIN bios e ON e.hardware_id=h.id ";
+// TODO : display only selected devices (main and others)
+$queryDetails = "SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_'";
 
-//MEMORIES INFOS
-$queryDetails .= "LEFT JOIN memories m ON m.hardware_id=h.id ";
-
-// VIDEOS CARDS INFOS
-$queryDetails .= "LEFT JOIN videos v ON v.hardware_id=h.id ";
-$queryDetails .= "where deviceid<>'_SYSTEMGROUP_' AND deviceid<>'_DOWNLOADGROUP_' ";
-// TAG RESTRICTIONS
-if (is_defined($_GET['value']) && $_GET['filtre'] == "a.TAG") {
-    $tag = $_GET['value'];
-    $queryDetails .= "AND a.TAG= '$tag' ";
-}
-
-// TAG RESTRICTIONS
-if (is_defined($_GET['value']) && strpos($_GET['filtre'], 'a.fields_') === 0){
-    $tag = $_GET['value'];
-    $fields = $_GET['filtre'];
-    $queryDetails .= "AND ".$fields."= '$tag' ";
-}
-
-if (is_defined($_SESSION['OCS']["mesmachines"])) {
-    $queryDetails .= "AND " . $_SESSION['OCS']["mesmachines"];
-}
-$queryDetails .= " group by h.id";
-$tab_options['LBL_POPUP']['SUP'] = 'name';
-$tab_options['LBL']['SUP'] = $l->g(122);
-$tab_options['TRI']['DATE']['e.bdate'] = "%m/%d/%Y"; // BIOS date format in database (varchar)
-
-$entete = ajaxtab_entete_fixe($list_fields, $default_fields, $tab_options, $list_col_cant_del);
-
-
+ajaxtab_entete_fixe($list_fields, $default_fields, $tab_options, $list_col_cant_del);
+echo "</div></div>";
 echo close_form();
+
 
 if (AJAX) {
     ob_end_clean();
     tab_req($list_fields, $default_fields, $list_col_cant_del, $queryDetails, $tab_options);
-    }
-?>
+}
