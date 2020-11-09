@@ -27,10 +27,29 @@ if (AJAX) {
     ob_start();
 }
 
+
+
 // printEnTete($l->g(9000));
 // temp header
 echo "<h2> Compare devices : </h2>";
 
+
+/*
+    TODO : 
+    - improve selectors (what if 100+ devices)
+    - get devices xmls
+    - display differences
+
+    THINK HARDER :
+    - autocompleted inputs vs dropdown selectors ?
+    in case 1 vs 15 > cant display 15 selectors but two autocompleted inputs could do
+
+    - ability to see which devices already selected (but cant display two tables at once)
+    differences display wont be a table : actual table can refer to selected devices, 
+    differences can be displayed below
+
+    - differences shown on refresh vs other page
+ */
 
 $form_name = 'compare_devices';
 $tab_options = $protectedPost;
@@ -65,29 +84,45 @@ if (isset($protectedPost['add_device'])) {
 }
 
 // req to select from 
-$link=$_SESSION['OCS']["readServer"];
+$link = $_SESSION['OCS']["readServer"];
 $result = mysql2_query_secure("SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_'", $link);
 $result = mysqli_fetch_all($result, MYSQLI_ASSOC);
-var_dump($result);
 
 // prepare array to display during selection
 foreach ($result as $key => $value) {
     $display[$key] = $value['DEVICEID'];
 }
 
-
 echo "<div>
         <div>";
 
 // select main device and other devices
 formGroup('select', 'main_device', 'Main device to compare :', '', '', '', '', $result, $display, "required");
-echo "<input type='submit' name='add_main_device' id='add_main_device' class='btn btn-success' value='Add'><br><br>";
+// echo "<input type='submit' name='add_main_device' id='add_main_device' class='btn btn-success' value='Add'><br><br>";
+
 // TODO : hide other device if main device not selected yet + remove already selected devices from list
-formGroup('select', 'other_device', 'Other devices to compare :', '', '', '', '', $result, $display, "required");
-echo "<input type='submit' name='add_other_device' id='add_other_device' class='btn btn-success' value='Add'>";
+formGroup('select', 'other_device[]', 'Other devices to compare :', '', '', '', '', $result, $display, "required");
+// echo "<input type='submit' name='add_other_device' id='add_other_device' class='btn btn-success' value='Add'>";
+
+
+// use code below to display multiple selectors (bs)
+/* if (isset($protectedPost['add_other_device'])) {
+    formGroup('select', 'other_device', 'Other devices to compare :', '', '', '', '', $result, $display, "required");
+} 
+echo "<input type='submit' name='add_device' id='add_device' class='btn btn-success' value='Add device to comparison'><br><br>";
+*/
+
+
 echo "</div></div></br></br></br></br>";
 
-// Display table of all type created 
+// quick check 
+var_dump($result);
+$m_device = $result[$protectedPost['main_device']]['ID'];
+$o_device = $result[$protectedPost['other_device'][0]]['ID'];
+echo "<br>comparing $m_device with $o_device";
+
+
+// Display table of selected devices
 $list_fields = array(
     'ID' => 'ID',
     'DEVICE ID' => 'DEVICEID',
@@ -99,13 +134,45 @@ $tab_options['LBL_POPUP']['SUP'] = 'TYPE_NAME';
 $default_fields = $list_fields;
 $list_col_cant_del = $list_fields;
 
-// TODO : display only selected devices (main and others)
-$queryDetails = "SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_'";
+$devices = array($m_device, $o_device);
+// var_dump($devices);
+$in = implode(",", $devices);
+// var_dump($in);
+
+// TODO : display differences not table
+$queryDetails = "SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_' AND id IN ($in)";
+// var_dump($queryDetails);
 
 ajaxtab_entete_fixe($list_fields, $default_fields, $tab_options, $list_col_cant_del);
+echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='Compare devices'>";
 echo "</div></div>";
 echo close_form();
 
+
+// TRAITEMENT XML -------------------------------------------------
+
+include_once('Difference_Class.php');
+include_once('ArrayFromXML_Class.php');
+include_once('Table_Class.php');
+require_once('create_XML.php'); 
+
+$xml = new DeviceXML();
+
+function getArrayFromXml($xml, $elem) {
+    $xml_device = $xml->createXML($elem);
+    $xml_md = simplexml_load_string($xml_device);
+    print_r($xml_md);
+    // encode Xml file into Json
+    $json = json_encode($xml_md);
+    // decode ...
+    $array_md = json_decode($json, TRUE);
+    return $array_md;
+}
+
+$array = getArrayFromXml($xml, $m_device);
+var_dump($array);
+
+// -----------------------------------------------------------------
 
 if (AJAX) {
     ob_end_clean();
