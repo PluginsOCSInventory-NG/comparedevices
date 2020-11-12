@@ -14,7 +14,7 @@ class DeviceXML {
         foreach ($_SESSION['OCS']['SQL_TABLE_HARDWARE_ID'] as $tablename) {
             if (!in_array($tablename, $table_not_use)) {
                 $sql = "select * from %s where hardware_id=%s";
-                $arg = array($tablename, $protectedGet['systemid']);
+                $arg = array($tablename, $id);
 
                 $res = mysql2_query_secure($sql, $_SESSION['OCS']["readServer"], $arg);
                 while ($item = mysqli_fetch_object($res)) {
@@ -51,7 +51,7 @@ class DeviceXML {
 
         //ACCOUNTINFO VALUES
         $sql = "select * from accountinfo where hardware_id=%s";
-        $arg = $protectedGet['systemid'];
+        $arg = $id;
         $res = mysql2_query_secure($sql, $_SESSION['OCS']["readServer"], $arg);
         $item_accountinfo = mysqli_fetch_object($res);
 

@@ -161,7 +161,6 @@ $xml = new DeviceXML();
 function getArrayFromXml($xml, $elem) {
     $xml_device = $xml->createXML($elem);
     $xml_md = simplexml_load_string($xml_device);
-    print_r($xml_md);
     // encode Xml file into Json
     $json = json_encode($xml_md);
     // decode ...
@@ -170,7 +169,24 @@ function getArrayFromXml($xml, $elem) {
 }
 
 $array = getArrayFromXml($xml, $m_device);
-var_dump($array);
+// var_dump($array);
+echo "<br><br>";
+$o_array = getArrayFromXml($xml, $o_device);
+// var_dump($o_device);
+
+echo "<br><br> DIFFERENCES ";
+$diffs = new Difference();
+$diffsV1 = $diffs->getDifferencesV1($array, $o_array);
+// var_dump($diffsV1);
+
+// show main device array
+$mainDeviceTable = new Tabletizer();
+echo $mainDeviceTable->fromArray($array);
+
+
+// create table
+$table = new Tabletizer();
+echo $table->fromArray($diffsV1);
 
 // -----------------------------------------------------------------
 
