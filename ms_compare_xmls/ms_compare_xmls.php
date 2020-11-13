@@ -27,29 +27,57 @@ if (AJAX) {
     ob_start();
 }
 
+include_once('Difference_Class.php');
+include_once('ArrayFromXML_Class.php');
+include_once('Table_Class.php');
+require_once('create_XML.php'); 
 
+include ('/usr/share/ocsinventory-reports/ocsreports/vendor/jfcherng/php-diff/example/demo_base.php');
 
-// printEnTete($l->g(9000));
-// temp header
-echo "<h2> Compare devices : </h2>";
+use Jfcherng\Diff\DiffHelper;
+use Jfcherng\Diff\Factory\RendererFactory;
 
+echo "
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css' />
+			<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/line-numbers/prism-line-numbers.min.css' />
+
+			<style type='text/css'>
+				html {
+					font-size: 13px;
+				}
+				.token.coord {
+					color: #6cf;
+				}
+				.token.diff.bold {
+					color: #fb0;
+					font-weight: normal;
+				}";
+
+echo DiffHelper::getStyleSheet();
+echo "</style><br><br>";
 
 /*
+    /!\ WARNING /!\
+    Make sure https://github.com/jfcherng/php-diff is installed on server, 
+    otherwise differences won't display as the extension requires this 
+    third party library
+
     TODO : 
-    - improve selectors (what if 100+ devices)
-    - get devices xmls
-    - display differences
+    - improve selectors (what if 10+ devices)
+    - table isnt displaying selected devices (?)
 
     THINK HARDER :
     - autocompleted inputs vs dropdown selectors ?
     in case 1 vs 15 > cant display 15 selectors but two autocompleted inputs could do
 
-    - ability to see which devices already selected (but cant display two tables at once)
-    differences display wont be a table : actual table can refer to selected devices, 
-    differences can be displayed below
-
-    - differences shown on refresh vs other page
+    - php-diff only displays diff 1vs1 
+    - php-diff table are not (yet) collapsable
  */
+
+
+ // printEnTete($l->g(9000));
+// temporary header :
+echo "<h2> Compare devices : </h2>";
 
 $form_name = 'compare_devices';
 $tab_options = $protectedPost;
@@ -116,7 +144,7 @@ echo "<input type='submit' name='add_device' id='add_device' class='btn btn-succ
 echo "</div></div></br></br></br></br>";
 
 // quick check 
-var_dump($result);
+// var_dump($result);
 $m_device = $result[$protectedPost['main_device']]['ID'];
 $o_device = $result[$protectedPost['other_device'][0]]['ID'];
 echo "<br>comparing $m_device with $o_device";
@@ -135,13 +163,8 @@ $default_fields = $list_fields;
 $list_col_cant_del = $list_fields;
 
 $devices = array($m_device, $o_device);
-// var_dump($devices);
 $in = implode(",", $devices);
-// var_dump($in);
-
-// TODO : display differences not table
 $queryDetails = "SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_' AND id IN ($in)";
-// var_dump($queryDetails);
 
 ajaxtab_entete_fixe($list_fields, $default_fields, $tab_options, $list_col_cant_del);
 echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='Compare devices'>";
@@ -150,16 +173,29 @@ echo close_form();
 
 
 // TRAITEMENT XML -------------------------------------------------
-
-include_once('Difference_Class.php');
-include_once('ArrayFromXML_Class.php');
-include_once('Table_Class.php');
-require_once('create_XML.php'); 
-
 $xml = new DeviceXML();
 
-function getArrayFromXml($xml, $elem) {
+$oldString = $xml->createXML($m_device);
+$newString = $xml->createXML($o_device);
+
+// demo the no-inline-detail diff
+$inlineResult = DiffHelper::calculate(
+    $oldString,
+    $newString,
+    // options : Unified, Combined, SideBySide, Inline
+    'SideBySide',
+    $diffOptions,
+    // detail levels : word, line, char, none
+    ['detailLevel' => 'none'] + $rendererOptions
+);
+
+echo "<br><br>$inlineResult";
+
+// old table display below
+
+/* function getArrayFromXml($xml, $elem) {
     $xml_device = $xml->createXML($elem);
+    print_r($xml_device, true);
     $xml_md = simplexml_load_string($xml_device);
     // encode Xml file into Json
     $json = json_encode($xml_md);
@@ -186,7 +222,7 @@ echo $mainDeviceTable->fromArray($array);
 
 // create table
 $table = new Tabletizer();
-echo $table->fromArray($diffsV1);
+echo $table->fromArray($diffsV1); */
 
 // -----------------------------------------------------------------
 
