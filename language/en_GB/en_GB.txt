@@ -1,1 +1,2 @@
-23152 Compare devices
+23150 Compare devices :
+23151 Compare devices
