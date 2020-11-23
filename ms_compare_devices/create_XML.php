@@ -1,5 +1,8 @@
 <?php
-
+/*
+Generate xml structured string of a given device characteristics
+Returns a string
+*/
 class DeviceXML {
     function createXML($id) {
         $sql = "select * from hardware where id=%s";

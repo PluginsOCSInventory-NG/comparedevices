@@ -34,15 +34,7 @@ if (AJAX) {
     third party library
 
     TODO : 
-    - improve selectors (what if 10+ devices)
-    - table isnt displaying selected devices (?)
-
-    THINK HARDER :
-    - autocompleted inputs vs dropdown selectors ?
-    in case 1 vs 15 > cant display 15 selectors but two autocompleted inputs could do
-
-    - php-diff only displays diff 1vs1 
-    - php-diff table are not (yet) collapsable
+    - allow multiple comparison
 */
 require_once('create_XML.php'); 
 include ('/usr/share/ocsinventory-reports/ocsreports/vendor/jfcherng/php-diff/example/demo_base.php');
@@ -65,9 +57,9 @@ echo "
 					color: #fb0;
 					font-weight: normal;
 				}";
-
-echo DiffHelper::getStyleSheet();
-echo "</style><br><br>";
+// get custom css style sheet (columns width set to 50%)
+include '/usr/share/ocsinventory-reports/ocsreports/extensions/compare_devices/table_css/diff_table.css';
+echo "</style>";
 
 
 printEnTete($l->g(23150));
@@ -79,45 +71,29 @@ $tab_options['table_name'] = $table_name;
 
 
 echo open_form($form_name, '', 'enctype="multipart/form-data"', 'form-horizontal');
-echo '<div class="col col-md-10" >';
+echo '<div class="col col-md-12" >';
 
-// req to select from 
+// get selection of devices available for comparison
 $link = $_SESSION['OCS']["readServer"];
 $result = mysql2_query_secure("SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_'", $link);
 $result = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-// prepare array for selection
+// deviceid will be displayed by selectors
 foreach ($result as $key => $value) {
     $display[$key] = $value['DEVICEID'];
 }
 
 echo "<div>
         <div>";
-// select main device and other devices
-formGroup('select', 'main_device', 'Main device to compare :', '', '', '', '', $result, $display, "required");
-formGroup('select', 'other_device', 'Other device to compare :', '', '', '', '', $result, $display, "required");
+// selectors for main device and other devices
+formGroup('select', 'main_device', $l->g(23153), '', '', (int)$protectedPost['main_device'], '', $result, $display, "required");
+formGroup('select', 'other_device', $l->g(23154), '', '', (int)$protectedPost['other_device'], '', $result, $display, "required");
+
+$time_delay_text = $l->g(23152);
+$button_text = $l->g(23151);
+echo "<br><p>$time_delay_text</p><br>";
 // submit values
-echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='Compare devices'>";
-echo "</div>
-    </div>";
-
-
-// Display table of selected devices
-$list_fields = array(
-    'ID' => 'ID',
-    'DEVICE ID' => 'DEVICEID',
-);
-$list_fields['SUP'] = 'ID';
-$tab_options['LBL_POPUP']['SUP'] = 'TYPE_NAME';
-$default_fields = $list_fields;
-$list_col_cant_del = $list_fields;
-
-$devices = array($result[$protectedPost['main_device']]['ID'], $result[$protectedPost['other_device']]['ID']);
-$in = implode(",", $devices);
-// query for table display
-$queryDetails = "SELECT ID, DEVICEID FROM hardware WHERE deviceid <> '_SYSTEMGROUP_' AND deviceid <>'_DOWNLOADGROUP_' AND id IN (".$in.")";
-ajaxtab_entete_fixe($list_fields, $default_fields, $tab_options, $list_col_cant_del);
-
+echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='$button_text'>";
 echo "</div>
     </div>";
 echo close_form();
@@ -126,11 +102,11 @@ echo close_form();
 // TRAITEMENT XML -------------------------------------------------
 $xml = new DeviceXML();
 
-// createXML acutally only creates xml structure in a string
+// get main device and other device as xml structured STRINGS
 $main_device = $xml->createXML($result[$protectedPost['main_device']]['ID']);
 $other_device = $xml->createXML($result[$protectedPost['other_device']]['ID']);
 
-// demo the no-inline-detail diff
+// get differences between previously generated strings
 $inlineResult = DiffHelper::calculate(
     $main_device,
     $other_device,
@@ -140,7 +116,7 @@ $inlineResult = DiffHelper::calculate(
     // detail levels : word, line, char, none
     ['detailLevel' => 'none'] + $rendererOptions
 );
-echo "<div class='col col-md-10' style='overflow-y: auto; height:300px;'><br><br>$inlineResult</div>";
+echo "<div class='col col-md-12'><br><br>$inlineResult</div>";
 // -----------------------------------------------------------------
 
 if (AJAX) {

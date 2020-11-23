@@ -1,2 +1,5 @@
 23150 Compare devices :
 23151 Compare devices
+23152 (It may take a few seconds for the results to appear)
+23153 Main device to compare :
+23154 Other device to compare :
