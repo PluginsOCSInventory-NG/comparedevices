@@ -29,37 +29,23 @@ if (AJAX) {
 
 /*
     /!\ WARNING /!\
-    Make sure https://github.com/jfcherng/php-diff is installed on server, 
+    Make sure https://github.com/JBlond/php-diff is installed on server, 
     otherwise differences won't display as the extension requires this 
     third party library
 
     TODO : 
     - allow multiple comparison
 */
-require_once('create_XML.php'); 
-include ('/usr/share/ocsinventory-reports/ocsreports/vendor/jfcherng/php-diff/example/demo_base.php');
+require_once('create_XML.php');
 
-use Jfcherng\Diff\DiffHelper;
-use Jfcherng\Diff\Factory\RendererFactory;
+use jblond\Diff;
+use jblond\Diff\Renderer\Html\SideBySide;
 
-echo "
-	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css' />
-			<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/line-numbers/prism-line-numbers.min.css' />
-
-			<style type='text/css'>
-				html {
-					font-size: 13px;
-				}
-				.token.coord {
-					color: #6cf;
-				}
-				.token.diff.bold {
-					color: #fb0;
-					font-weight: normal;
-				}";
-// get custom css style sheet (columns width set to 50%)
-include '/usr/share/ocsinventory-reports/ocsreports/extensions/compare_devices/table_css/diff_table.css';
+// get style sheet
+echo "<style>";
+include '/usr/share/ocsinventory-reports/ocsreports/extensions/compare_devices/table_css/styles.css';
 echo "</style>";
+
 
 
 printEnTete($l->g(23150));
@@ -94,30 +80,33 @@ $button_text = $l->g(23151);
 echo "<br><p>$time_delay_text</p><br>";
 // submit values
 echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='$button_text'>";
-echo "</div>
-    </div>";
+echo "</div><br>";
 echo close_form();
 
 
-// TRAITEMENT XML -------------------------------------------------
 $xml = new DeviceXML();
-
 // get main device and other device as xml structured STRINGS
 $main_device = $xml->createXML($result[$protectedPost['main_device']]['ID']);
 $other_device = $xml->createXML($result[$protectedPost['other_device']]['ID']);
 
-// get differences between previously generated strings
-$inlineResult = DiffHelper::calculate(
-    $main_device,
-    $other_device,
-    // options : Unified, Combined, SideBySide, Inline
-    'SideBySide',
-    $diffOptions,
-    // detail levels : word, line, char, none
-    ['detailLevel' => 'none'] + $rendererOptions
+
+// Options for generating the diff.
+$options = [
+    'ignoreWhitespace' => true,
+    'ignoreCase'       => true,
+    'context'          => 2,
+    'cliColor'         => true // for cli output
+];
+// initialize the diff class
+$diff = new Diff($main_device, $other_device, $options);
+// choose renderer 
+$renderer = new SideBySide(
+    ['title1' => 'Main Device',
+    'title2' => 'Other Device']
 );
-echo "<div class='col col-md-12'><br><br>$inlineResult</div>";
-// -----------------------------------------------------------------
+// display differences
+echo $diff->Render($renderer);
+
 
 if (AJAX) {
     ob_end_clean();
