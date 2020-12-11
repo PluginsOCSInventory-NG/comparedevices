@@ -1,0 +1,5 @@
+{
+    "require": {
+        "jblond/php-diff": "^2.3"
+    }
+}
