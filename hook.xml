@@ -5,7 +5,7 @@
     </hook>
     <hook type="submenu">
         <mainmenuidentifier>ms_extension</mainmenuidentifier>
-        <identifier>ms_compare_devices</identifier>
+        <identifier>ms_comparedevices</identifier>
         <translation>23151</translation>
     </hook>
 </hookstore>

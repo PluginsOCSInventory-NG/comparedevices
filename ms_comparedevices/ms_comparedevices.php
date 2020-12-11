@@ -37,19 +37,20 @@ if (AJAX) {
     - allow multiple comparison
 */
 require_once('create_XML.php');
+require_once('../vendor/autoload.php');
 
 use jblond\Diff;
 use jblond\Diff\Renderer\Html\SideBySide;
 
 // get style sheet
 echo "<style>";
-include '/usr/share/ocsinventory-reports/ocsreports/extensions/compare_devices/table_css/styles.css';
+include '/usr/share/ocsinventory-reports/ocsreports/extensions/comparedevices/table_css/styles.css';
 echo "</style>";
 
 
 
 printEnTete($l->g(23150));
-$form_name = 'compare_devices';
+$form_name = 'comparedevices';
 $tab_options = $protectedPost;
 $table_name = $form_name;
 $tab_options['form_name'] = $form_name;
