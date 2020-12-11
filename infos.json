@@ -1,8 +1,8 @@
 {
     "displayName" : "Compare Devices",
     "author" : ["Léa DROGUET"],
-    "contributor" : [],
-    "supportedAgent" : ["Unix"],
+    "contributor" : ["Gilles DUBOIS"],
+    "supportedAgent" : ["Multiple"],
     "version" : "1",
     "licence" : "GPLv2",
     "description" : 
