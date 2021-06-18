@@ -37,17 +37,15 @@ if (AJAX) {
     - allow multiple comparison
 */
 require_once('create_XML.php');
-require_once('../vendor/autoload.php');
+require_once(EXT_DL_DIR.'comparedevices/vendor/autoload.php');
 
 use jblond\Diff;
 use jblond\Diff\Renderer\Html\SideBySide;
 
 // get style sheet
 echo "<style>";
-include '/usr/share/ocsinventory-reports/ocsreports/extensions/comparedevices/table_css/styles.css';
+include EXT_DL_DIR.'comparedevices/table_css/styles.css';
 echo "</style>";
-
-
 
 printEnTete($l->g(23150));
 $form_name = 'comparedevices';
@@ -83,7 +81,6 @@ echo "<br><p>$time_delay_text</p><br>";
 echo "<input type='submit' name='compare' id='compare' class='btn btn-success' value='$button_text'>";
 echo "</div><br>";
 echo close_form();
-
 
 $xml = new DeviceXML();
 // get main device and other device as xml structured STRINGS
