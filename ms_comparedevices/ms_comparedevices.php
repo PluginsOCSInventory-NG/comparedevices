@@ -71,8 +71,8 @@ foreach ($result as $key => $value) {
 echo "<div>
         <div>";
 // selectors for main device and other devices
-formGroup('select', 'main_device', $l->g(23153), '', '', (int)$protectedPost['main_device'], '', $result, $display, "required");
-formGroup('select', 'other_device', $l->g(23154), '', '', (int)$protectedPost['other_device'], '', $result, $display, "required");
+formGroup('select', 'main_device', $l->g(23153), '', '', isset($protectedPost['main_device']) ? (int)$protectedPost['main_device'] : '', '', $result, $display, "required");
+formGroup('select', 'other_device', $l->g(23154), '', '', isset($protectedPost['other_device']) ? (int)$protectedPost['other_device'] : '', '', $result, $display, "required");
 
 $time_delay_text = $l->g(23152);
 $button_text = $l->g(23151);
@@ -84,8 +84,10 @@ echo close_form();
 
 $xml = new DeviceXML();
 // get main device and other device as xml structured STRINGS
-$main_device = $xml->createXML($result[$protectedPost['main_device']]['ID']);
-$other_device = $xml->createXML($result[$protectedPost['other_device']]['ID']);
+if(isset($protectedPost['main_device']) && isset($protectedPost['other_device'])) {
+    $main_device = $xml->createXML($result[$protectedPost['main_device']]['ID']);
+    $other_device = $xml->createXML($result[$protectedPost['other_device']]['ID']);
+}
 
 
 // Options for generating the diff.
@@ -96,14 +98,17 @@ $options = [
     'cliColor'         => true // for cli output
 ];
 // initialize the diff class
-$diff = new Diff($main_device, $other_device, $options);
-// choose renderer 
-$renderer = new SideBySide(
-    ['title1' => 'Main Device',
-    'title2' => 'Other Device']
-);
-// display differences
-echo $diff->Render($renderer);
+if(isset($main_device) && isset($other_device)) {
+    $diff = new Diff($main_device, $other_device, $options);
+    // choose renderer 
+    $renderer = new SideBySide(
+        ['title1' => 'Main Device',
+        'title2' => 'Other Device']
+    );
+    // display differences
+    echo $diff->Render($renderer);
+}
+
 
 
 if (AJAX) {
